@@ -1,0 +1,11 @@
+version: '3.3'
+services:
+  app:
+    ports:
+        - "8080:80"
+    build:
+      context: .
+      dockerfile: ./docker/dev/Dockerfile
+    image: newsite:dev
+    volumes:
+        - "./app:/usr/share/nginx/html:ro"

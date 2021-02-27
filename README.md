@@ -29,7 +29,7 @@ Next is to run in docker.
 
 ### Docker - Local development
 
-### Dev version
+#### Dev version
 
 In dev mode, the `app/` directory is not built inside the docker image but mounted directly in the container.
 Any change to the files would be available immediately on the running instance.
@@ -40,7 +40,7 @@ Build and run with:
 $ docker-compose -f dev.yml up --build
 ```
 
-### Production version
+#### Production version
 
 In production mode, the `app/` directory is built in the docker image.
 You would try this mode locally just before pushing the changes and trigger a pipeline.
@@ -50,3 +50,26 @@ Build and run with:
 ```
 $ docker-compose -f prd.yml up --build
 ```
+
+## Setting up the infrastructure
+
+First I will create the ECS cluster and VPCs in my personal AWS account.
+I will use https://github.com/terraform-aws-modules/terraform-aws-ecs/tree/master/examples/complete-ecs as a starting point.
+
+### Setup terraform
+
+Download from https://www.terraform.io/
+
+On Mac you can do `brew install terraform`.
+
+```
+$ cd terraform/
+$ terraform init
+```
+
+Changes to `examples/complete-ecs`:
+* they are referring to modules in `../..` - use the terraform registry instead
+* created a directory `terraform/app-hello-world` to hold the task configuration; copied and adapted from https://github.com/terraform-aws-modules/terraform-aws-ecs/tree/v2.8.0/examples/complete-ecs/service-hello-world
+
+I had troubles running terraform on my old MacBook Late 2008. I fought a while with it, until I spun an EC2 instance and it worked at the first go!
+

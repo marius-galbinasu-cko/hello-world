@@ -21,7 +21,12 @@ module "vpc" {
   private_subnets = ["10.1.1.0/24", "10.1.2.0/24"]
   public_subnets  = ["10.1.11.0/24", "10.1.12.0/24"]
 
-  enable_nat_gateway = false # false is just faster
+  # false is just faster, but it doesn't allow EC2 instances to join the cluster
+  # as they cannot talk to the ECS api endpoint (or anything really)
+  enable_nat_gateway = true
+
+  # TODO: set VPC endpoints for ecs
+  # enable_ecs_endpoint = true
 
   tags = {
     Environment = local.environment
@@ -113,7 +118,7 @@ module "asg" {
   health_check_type         = "EC2"
   min_size                  = 0
   max_size                  = 2
-  desired_capacity          = 0 # we don't need them for the example
+  desired_capacity          = 1
   wait_for_capacity_timeout = 0
 
   tags = [

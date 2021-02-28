@@ -16,7 +16,7 @@ resource "aws_ecs_task_definition" "hello_world" {
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
-        "awslogs-region": "eu-west-1",
+        "awslogs-region": "eu-west-2",
         "awslogs-group": "hello_world",
         "awslogs-stream-prefix": "checkout"
       }
@@ -35,4 +35,9 @@ resource "aws_ecs_service" "hello_world" {
 
   deployment_maximum_percent         = 100
   deployment_minimum_healthy_percent = 0
+
+  # Allow external changes without Terraform plan difference
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
 }

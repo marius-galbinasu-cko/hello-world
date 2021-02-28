@@ -73,3 +73,51 @@ Changes to `examples/complete-ecs`:
 
 I had troubles running terraform on my old MacBook Late 2008. I fought a while with it, until I spun an EC2 instance and it worked at the first go!
 
+A long debug session...
+
+When setting the ASG to have 1 instance, a new instance would start but it wouldn't join the ECS cluster. The logs of the machine weren't shipped to CloudWatch, and the machine was private with no direct access. As I wasn't sure the ECS configuration was written correctly by user data, I opted for launching manually an EC2 instance in the public subnet, creating a security group that was only allowing port 22 traffic and from my home IP address. I also had to change the SG for the private EC2 instances to allow traffic from the public subnet, and update the ASG to use an SSH key. When jumping on the server, error in /var/log/ecs/ecs-agent.log was:
+
+```
+level=error time=2021-02-28T00:28:17Z msg="Unable to register as a container instance with ECS: RequestError: send request failed\ncaused by: Post \"https://ecs.eu-west-2.amazonaws.com/\": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)" module=client.go
+```
+
+This pointed at two problems:
+* NAT gateway not setup for the private subnets
+* VPC endpoints not setup
+
+I tried the VPC endpoint first, but how to do on the module wasn't very well documented and required few settings. Given the example had the following, I changed it to `true`.
+
+```
+enable_nat_gateway = false # false is just faster
+```
+
+And TA-DA, the EC2 instance joined the cluster!
+
+Next, the service wouldn't start. Error visible in the ECS console:
+
+```
+Status reason	CannotStartContainerError: Error response from daemon: failed to initialize logging driver: failed to create Cloudwatch log stream: ResourceNotFoundException: The specified log group does not exist.
+```
+
+It turns out it was my fault in using region `eu-west-1` for CloudWatch in the task configuration.
+
+The task now starts, with the logs showing:
+
+```
+2021-02-28 11:05:42Hello from Docker!
+2021-02-28 11:05:42This message shows that your installation appears to be working correctly.
+2021-02-28 11:05:42To generate this message, Docker took the following steps:
+2021-02-28 11:05:421. The Docker client contacted the Docker daemon.
+2021-02-28 11:05:422. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+2021-02-28 11:05:42(amd64)
+2021-02-28 11:05:423. The Docker daemon created a new container from that image which runs the
+2021-02-28 11:05:42executable that produces the output you are currently reading.
+2021-02-28 11:05:424. The Docker daemon streamed that output to the Docker client, which sent it
+2021-02-28 11:05:42to your terminal.
+2021-02-28 11:05:42To try something more ambitious, you can run an Ubuntu container with:
+2021-02-28 11:05:42$ docker run -it ubuntu bash
+2021-02-28 11:05:42Share images, automate workflows, and more with a free Docker ID:
+2021-02-28 11:05:42https://hub.docker.com/
+2021-02-28 11:05:42For more examples and ideas, visit:
+2021-02-28 11:05:42https://docs.docker.com/get-started/
+```

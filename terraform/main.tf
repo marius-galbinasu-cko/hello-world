@@ -24,6 +24,7 @@ module "vpc" {
   # false is just faster, but it doesn't allow EC2 instances to join the cluster
   # as they cannot talk to the ECS api endpoint (or anything really)
   enable_nat_gateway = true
+  single_nat_gateway = true
 
   # TODO: set VPC endpoints for ecs
   # enable_ecs_endpoint = true

@@ -10,9 +10,16 @@ resource "aws_ecs_task_definition" "hello_world" {
 [
   {
     "name": "hello_world",
-    "image": "hello-world",
+    "image": "454648136210.dkr.ecr.eu-west-2.amazonaws.com/hello-world:dev-20210228-2123",
     "cpu": 0,
     "memory": 128,
+    "essential": true,
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "protocol": "tcp"
+      }
+    ],
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
@@ -38,6 +45,9 @@ resource "aws_ecs_service" "hello_world" {
 
   # Allow external changes without Terraform plan difference
   lifecycle {
-    ignore_changes = [desired_count]
+    ignore_changes = [
+      desired_count,
+      capacity_provider_strategy
+    ]
   }
 }

@@ -121,3 +121,31 @@ The task now starts, with the logs showing:
 2021-02-28 11:05:42For more examples and ideas, visit:
 2021-02-28 11:05:42https://docs.docker.com/get-started/
 ```
+
+Next: build an image and push to ECR. As a start:
+* create an ECR repository in terraform
+* build and push manually
+* TODO: automate build and push
+
+#### Build and push image (manually)
+
+```
+# ECR login
+eval $(aws ecr get-login --region eu-west-2 --no-include-email)
+
+# initialize
+export VERSION=dev-`date "+%Y%m%d-%H%M"`
+export ECR_IMAGE=454648136210.dkr.ecr.eu-west-2.amazonaws.com/hello-world:$VERSION
+
+# build image
+docker build -t hello-world:$VERSION -f docker/prd/Dockerfile .
+
+# tag and push, versioned tag
+docker tag hello-world:$VERSION $ECR_IMAGE
+docker push $ECR_IMAGE
+
+echo 'ECR image: ' $ECR_IMAGE
+```
+
+Updated the task definition to use `454648136210.dkr.ecr.eu-west-2.amazonaws.com/hello-world:dev-20210228-2123`.
+

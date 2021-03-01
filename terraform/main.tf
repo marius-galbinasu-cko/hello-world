@@ -108,7 +108,7 @@ module "asg" {
   lc_name = local.full_service_name
 
   image_id             = data.aws_ami.amazon_linux_ecs.id
-  instance_type        = "t2.micro"
+  instance_type        = "t2.nano"
   security_groups      = [aws_security_group.private_http.id]
   iam_instance_profile = module.ec2_profile.this_iam_instance_profile_id
   user_data            = data.template_file.user_data.rendered
@@ -144,11 +144,3 @@ data "template_file" "user_data" {
   }
 }
 
-###################
-# Disabled cluster
-###################
-module "disabled_ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-
-  create_ecs = false
-}

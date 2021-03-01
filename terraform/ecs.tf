@@ -2,7 +2,7 @@
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
  
-  name               = local.service_name
+  name               = local.full_service_name
   container_insights = true
 
   capacity_providers = ["FARGATE", "FARGATE_SPOT", aws_ecs_capacity_provider.prov1.name]
@@ -62,4 +62,13 @@ data "aws_ami" "amazon_linux_ecs" {
     name   = "owner-alias"
     values = ["amazon"]
   }
+}
+
+###################
+# Disabled cluster
+###################
+module "disabled_ecs" {
+  source  = "terraform-aws-modules/ecs/aws"
+
+  create_ecs = false
 }

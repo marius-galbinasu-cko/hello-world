@@ -16,3 +16,4 @@
 * Add logging to ALB
 * Create script to build&push image
 * Automate pipeline (github actions, CodeBuild?)
+* Create /health in nginx and change health check

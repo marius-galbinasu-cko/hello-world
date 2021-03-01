@@ -134,3 +134,9 @@ echo 'ECR image: ' $ECR_IMAGE
 Updated the task definition to use `454648136210.dkr.ecr.eu-west-2.amazonaws.com/hello-world:dev-20210228-2123`.
 
 Created ALB, make the ECS service using its target group. Not healthy atm!
+
+After some refactoring of terraform and the markdown documents:
+* hostPort on the ECS task definition wasn't right
+* made instance type smaller
+
+Still no luck with the target group health check.

@@ -18,6 +18,7 @@ resource "aws_ecs_task_definition" "hello_world" {
     "portMappings": [
       {
         "containerPort": 80,
+        "hostPort": 80,
         "protocol": "tcp"
       }
     ],

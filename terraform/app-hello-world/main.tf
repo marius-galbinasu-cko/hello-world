@@ -5,6 +5,7 @@ resource "aws_cloudwatch_log_group" "hello_world" {
 
 resource "aws_ecs_task_definition" "hello_world" {
   family = "hello_world"
+  network_mode = "awsvpc"
 
   container_definitions = <<EOF
 [
@@ -42,6 +43,16 @@ resource "aws_ecs_service" "hello_world" {
 
   deployment_maximum_percent         = 100
   deployment_minimum_healthy_percent = 0
+
+  network_configuration {
+    subnets = var.subnet_ids
+  }
+
+  load_balancer {
+    target_group_arn = var.target_group_arn
+    container_name   = "hello_world"
+    container_port   = 80
+  }
 
   # Allow external changes without Terraform plan difference
   lifecycle {

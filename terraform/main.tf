@@ -35,6 +35,169 @@ module "vpc" {
   }
 }
 
+resource "aws_security_group" "private_http" {
+  name        = "private_allow_http"
+  description = "Allow HTTP inbound traffic inside VPC"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "HTTP from VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["10.1.11.0/24", "10.1.12.0/24"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "private-http"
+  }
+}
+
+resource "aws_security_group" "public_http" {
+  name        = "public_allow_http"
+  description = "Allow HTTP inbound traffic from internet"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "HTTP from internet"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "public-http"
+  }
+}
+
+data "aws_kms_alias" "aws_s3" {
+  name = "alias/aws/s3"
+}
+
+resource "aws_s3_bucket" "hello_world" {
+  bucket = "application-hello-world-logs"
+  acl    = "private"
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        kms_master_key_id = data.aws_kms_alias.aws_s3.arn
+        sse_algorithm     = "aws:kms"
+        // Not available yet: https://github.com/hashicorp/terraform-provider-aws/pull/16581/files
+        // bucket_key_enabled
+      }
+    }
+  }
+
+  tags = {
+    Name        = "Bucket for logs from application hello-world"
+    Environment = "Dev"
+  }
+
+  lifecycle_rule {
+    id      = "alb"
+    enabled = true
+
+    prefix = "alb/"
+
+    tags = {
+      rule      = "alb"
+      autoclean = "true"
+    }
+
+    transition {
+      days          = 30
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 60
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "example" {
+  bucket = aws_s3_bucket.hello_world.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 5.0"
+
+  name = "hello-world-alb"
+
+  load_balancer_type = "application"
+
+  vpc_id             = module.vpc.vpc_id
+  subnets            = module.vpc.public_subnets
+  security_groups    = [aws_security_group.public_http.id]
+
+/*
+  # needed?
+  depends_on = [
+    aws_s3_bucket.hello_world
+  ]
+
+  access_logs = {
+    bucket = aws_s3_bucket.hello_world.id
+    prefix = "alb"
+  }
+*/
+
+  tags = {
+    Environment = "Dev"
+  }
+}
+
+resource "aws_alb_target_group" "main" {
+  name        = "hello-world-tg-dev"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+
+  health_check {
+   healthy_threshold   = "3"
+   interval            = "30"
+   protocol            = "HTTP"
+   matcher             = "200"
+   timeout             = "3"
+   path                = "/"
+   unhealthy_threshold = "2"
+  }
+}
+
+resource "aws_alb_listener" "http" {
+  load_balancer_arn = module.alb.this_lb_arn
+  port              = 80
+  protocol          = "HTTP"
+
+   default_action {
+    target_group_arn = aws_alb_target_group.main.id
+    type             = "forward"
+  }
+}
+
 #----- ECS --------
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
@@ -78,6 +241,8 @@ module "hello_world" {
   source = "./app-hello-world"
 
   cluster_id = module.ecs.this_ecs_cluster_id
+  target_group_arn = aws_alb_target_group.main.arn
+  subnet_ids = module.vpc.private_subnets
 }
 
 #----- ECS  Resources--------
@@ -109,7 +274,7 @@ module "asg" {
 
   image_id             = data.aws_ami.amazon_linux_ecs.id
   instance_type        = "t2.micro"
-  security_groups      = [module.vpc.default_security_group_id]
+  security_groups      = [aws_security_group.private_http.id]
   iam_instance_profile = module.ec2_profile.this_iam_instance_profile_id
   user_data            = data.template_file.user_data.rendered
 

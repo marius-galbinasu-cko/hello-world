@@ -149,3 +149,9 @@ echo 'ECR image: ' $ECR_IMAGE
 
 Updated the task definition to use `454648136210.dkr.ecr.eu-west-2.amazonaws.com/hello-world:dev-20210228-2123`.
 
+Created ALB, make the ECS service using its target group. Not healthy atm!
+
+TODO:
+- make the service healthy
+- restructure terraform files
+- enabling logging

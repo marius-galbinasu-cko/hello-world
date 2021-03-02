@@ -5,7 +5,7 @@ http://hello-world-ecs-dev-2041763857.eu-west-2.elb.amazonaws.com/
 
 ## Application
 
-The applicaiton consists of a simple Hello World website, with an HTML page. They are inside the `app/` directory.
+The applicaiton consists of a simple Hello World website, with an HTML page. They are inside the [app/](app/) directory.
 
 The HTML can be tested quickly by opening it in the browser.
 
@@ -71,3 +71,41 @@ docker push $ECR_IMAGE
 echo 'ECR image: ' $ECR_IMAGE
 ```
 
+## Scaling
+
+Scaling would be done automatically by setting scaling policies on the application and the servers. For the purpose of a demo, before auto-scaling can be tested thoroughly, manual scaling instructions are provided.
+
+### Manual scaling
+
+Manual scaling can be achieved:
+* on the application, by increasing the ECS's service `request_count` in [terraform/app-hello-world/main.tf](terraform/app-hello-world/main.tf):
+
+```
+resource "aws_ecs_service" "hello_world" {
+   ...
+
+  desired_count = 1
+```
+
+* on the servers, by increasing the number of servers, in particular the `desired_capacity`, in [terraform/main.tf](terraform/main.tf):
+
+```
+module "asg" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+
+  ...
+
+  min_size                  = 0
+  max_size                  = 2
+  desired_capacity          = 1
+```
+
+### Auto-scaling
+
+Auto-scaling can be achieved by:
+* making the service itself auto-scale (application scaling)
+* making the EC2 instances under the hood scaling (server scaling)
+
+The criteria that should determine the application scaling up are normally the number of requests, response time, CPU, but they are application dependent.
+
+Server scaling is driven by the CPU and memory usage across all the servers in the ECS cluster.

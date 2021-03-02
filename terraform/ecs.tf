@@ -43,6 +43,7 @@ module "hello_world" {
   cluster_id = module.ecs.this_ecs_cluster_id
   target_group_arn = aws_alb_target_group.main.arn
   subnet_ids = module.vpc.private_subnets
+  security_groups = [aws_security_group.private_http.id]
 }
 
 #----- ECS  Resources--------

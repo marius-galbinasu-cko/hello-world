@@ -47,6 +47,7 @@ resource "aws_ecs_service" "hello_world" {
 
   network_configuration {
     subnets = var.subnet_ids
+    security_groups = var.security_groups
   }
 
   load_balancer {

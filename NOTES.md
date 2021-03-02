@@ -140,3 +140,9 @@ After some refactoring of terraform and the markdown documents:
 * made instance type smaller
 
 Still no luck with the target group health check.
+
+Documented how to do scaling, manually and automatically.
+
+Finally fixed! The `network_configuration` for the `awsvpc` networking needed the private security group to be specified to allow the ALB target group to be able to connect.
+
+HTTPS hasn't been setup as I don't have any domain or certificate atm.

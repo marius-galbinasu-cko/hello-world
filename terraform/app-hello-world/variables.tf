@@ -12,3 +12,8 @@ variable "subnet_ids" {
   description = "List of subnet ids to which a service is deployed"
   default = []
 }
+
+variable "security_groups" {
+  description = "List of security groups ids to associate with the ENI"
+  default = []
+}
